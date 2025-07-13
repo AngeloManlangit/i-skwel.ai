@@ -1,18 +1,12 @@
 <script setup>
 import { ref } from 'vue';
-import { VueFlow } from '@vue-flow/core';
+import Flowchart from './components/Flowchart.vue';
 
 // --- STATE MANAGEMENT ---
 const isLoading = ref(false); // To show a loading state on the button
 const error = ref(null); // To display any errors from the API call
 
-// --- SECURE API KEY HANDLING ---
-// The API key is now read securely from the .env file.
-// Vite exposes environment variables prefixed with VITE_ on the import.meta.env object.
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-
-// --- VUE FLOW NODES ---
+// VUE NODES
 const nodes = ref([
 
   // main 3 nodes
@@ -124,169 +118,105 @@ const nodes = ref([
   },
 ]);
 
-const edges = ref([
-  {
-    id: 'e1->2',
-    source: '1', 
-    target: '2', 
-  },
-
-  {
-    id: 'e2->3',
-    source: '2', 
-    target: '3', 
-  },
-
-  // Prereq nodes to sub-nodes
-  {
-    id: 'e2->4',
-    source: '2', 
-    target: '4', 
-    animated: 'true',
-  },
-
-  {
-    id: 'e2->5',
-    source: '2', 
-    target: '5', 
-    animated: 'true',
-  },
-
-  {
-    id: 'e2->6',
-    source: '2', 
-    target: '6', 
-    animated: 'true',
-  },
-
-  {
-    id: 'e2->7',
-    source: '2', 
-    target: '7', 
-    animated: 'true',
-  },
-
-  {
-    id: 'e2->8',
-    source: '2', 
-    target: '8', 
-    animated: 'true',
-  },
-
-  {
-    id: 'e2->9',
-    source: '2', 
-    target: '9', 
-    animated: 'true',
-  },
-
-  // school to school sub-nodes
-  {
-    id: 'e3->10',
-    source: '3', 
-    target: '10', 
-  },
-
-  {
-    id: 'e3->11',
-    source: '3', 
-    target: '11', 
-  },
-
-  {
-    id: 'e3->12',
-    source: '3', 
-    target: '12', 
-  },
-
-  // school sub-nodes to desciption
-  {
-    id: 'e10->13',
-    source: '10', 
-    target: '13', 
-    animated: true,
-  },
-
-  {
-    id: 'e11->14',
-    source: '11', 
-    target: '14', 
-    animated: true,
-  },
-
-  {
-    id: 'e12->15',
-    source: '12', 
-    target: '15', 
-    animated: true,
-  },
-]);
+// --- SECURE API KEY HANDLING ---
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 // --- GEMINI API INTEGRATION ---
 /**
- * Fetches a specified number of random words from the Gemini API.
- * @param {number} count - The number of random words to fetch.
- * @returns {Promise<string[]>} A promise that resolves to an array of words.
- */
-async function fetchRandomWords(count = 5) {
-    if (!apiKey) {
-        throw new Error('VITE_GEMINI_API_KEY is not defined in your .env file.');
-    }
-    
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-    
-    const prompt = `Generate ${count} random English words that can be found in the Merriam-Webster dictionary, separated by commas. For example: "Cat,Tree,Book,Sun,River"`;
-
-    const requestBody = {
-        contents: [{
-            parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-            temperature: 1.5,
-        }
-    };
-
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to fetch data from Gemini API.');
-    }
-
-    const data = await response.json();
-    const text = data.candidates[0]?.content?.parts[0]?.text;
-
-    if (!text) {
-        throw new Error('Received an empty response from the API.');
-    }
-
-    return text.trim().split(',').map(word => word.trim());
-}
-
-/**
  * Main function to trigger the API call and update the node labels.
  */
-async function fetchAndUpdateLabels() {
+async function generateRoadmap() {
     isLoading.value = true;
     error.value = null;
-    try {
-        const wordsNeeded = nodes.value.filter(n => n.type !== 'input' && n.type !== 'output').length;
-        const words = await fetchRandomWords(wordsNeeded);
 
-        let wordCounter = 0;
-        nodes.value = nodes.value.map((node) => {
-            if (node.type === 'input' || node.type === 'output') {
-                return node;
+    if (!apiKey) {
+        error.value = 'VITE_GEMINI_API_KEY is not defined in your .env file.';
+        isLoading.value = false;
+        return; // Exit early if no API key is found
+    }
+
+    try {
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+
+        // Provide the model with the current node structure as context.
+        const contextPrompt = `
+          Here is the current structure of a flowchart with placeholder labels.
+          The flowchart represents a personalized learning and career roadmap for a user in Cebu City, Philippines.
+          The main nodes are 'PROGRAM', 'PREREQUISITES', and 'SCHOOL A'.
+          The other nodes are sub-topics or details related to these main nodes.
+          Current labels: ${JSON.stringify(nodes.value.map(n => ({id: n.id, label: n.data.label})))}
+        `;
+
+        // Define the JSON schema for the expected response.
+        const schema = {
+          type: 'ARRAY',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              id: { type: 'STRING' },
+              newLabel: { type: 'STRING' },
+            },
+            required: ['id', 'newLabel'],
+          },
+        };
+
+        const requestBody = {
+            contents: [{
+                parts: [{ text: contextPrompt }]
+            }],
+            systemInstruction: {
+              parts: [{
+                text: `You are a helpful career and education advisor for a user in Cebu City, Philippines. Your task is to populate a flowchart with a personalized roadmap.
+                Based on the provided flowchart structure, generate relevant and specific labels for EACH of the provided node IDs.
+                For the 'PROGRAM' node (id: 1), suggest a specific tech-related degree (e.g., "BS in Information Technology").
+                For the 'PREREQUISITES' node (id: 2), provide a high-level category (e.g., "Core Competencies").
+                For the 'SCHOOL A' node (id: 3), name a specific, well-known university in Cebu that offers the suggested program (e.g., "University of San Carlos").
+                The other nodes should be filled with related sub-topics, skills, or career steps.
+                Return the response ONLY as a JSON array of objects, where each object has an "id" and a "newLabel", validating against the provided schema.`
+              }]
+            },
+            generationConfig: {
+              responseMimeType: 'application/json',
+              responseSchema: schema,
+              temperature: 0.8,
             }
-            
-            const newLabel = words[wordCounter] || `Node ${node.id}`;
-            wordCounter++;
-            
-            return { ...node, label: newLabel };
+        };
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || 'Failed to fetch data from Gemini API.');
+        }
+
+        const data = await response.json();
+        const newLabelsText = data.candidates[0]?.content?.parts[0]?.text;
+
+        if (!newLabelsText) {
+            throw new Error('Received an empty or invalid JSON response from the API.');
+        }
+
+        const parsedLabels = JSON.parse(newLabelsText);
+
+        // Create a map for easy lookup
+        const labelMap = new Map(parsedLabels.map(item => [item.id, item.newLabel]));
+
+        // Update the nodes with the new labels from the map
+        nodes.value = nodes.value.map(node => {
+            if (labelMap.has(node.id)) {
+                return {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        label: labelMap.get(node.id),
+                    }
+                };
+            }
+            return node;
         });
 
     } catch (e) {
@@ -299,26 +229,31 @@ async function fetchAndUpdateLabels() {
 </script>
 
 <template>
-  <main class="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-800 font-sans">
-    <div class="w-full max-w-4xl mx-auto">
+  <main class="min-h-screen bg-gradient-to-b from-gray-950 to-black">
+    <section class="px-6 pt-32 text-white text-center">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-4xl md:text-5xl font-bold mb-6 text-yellow-400 [text-shadow:0_0_10px_#FFD700]">Your Personalized Roadmap</h2>
+        <p class="text-lg md:text-xl text-gray-300 mb-12">
+          Here's the AI-generated learning and career path tailored just for you. Located in Cebu City, Central Visayas, Philippines, we provide insights relevant to your region.
+        </p>
       
-        <!-- Button to trigger the fetch -->
-        <div class="text-center">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button 
-            @click="fetchAndUpdateLabels" 
+            @click="generateRoadmap" 
             :disabled="isLoading || !apiKey"
-            class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-300"
+            class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-300 w-full sm:w-auto"
           >
             <span v-if="isLoading" class="flex items-center justify-center">
-              <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Fetching...
+              <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              Generating...
             </span>
-            <span v-else>Get Random Labels</span>
+            <span v-else>Generate Roadmap</span>
           </button>
+          
+          <img src="./assets/i-skwelai-anim2.gif" v-if="isLoading" class="z-1 fixed w-120 pt-50">
         </div>
+
+        
         
         <!-- Error Message Display -->
         <div v-if="error" class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
@@ -328,13 +263,10 @@ async function fetchAndUpdateLabels() {
           <strong>Warning:</strong> Your `VITE_GEMINI_API_KEY` is not set in your `.env` file. The button will be disabled.
         </div>
 
-      <!-- Vue Flow Diagram -->
-      <div class="w-full h-[80vh] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <VueFlow :default-viewport="{ zoom: 1.3, position: { x: -100, y:0 } }" :nodes="nodes" :edges="edges">
-          <Background />
-        </VueFlow>
+        <!-- Vue Flow Diagram -->
+        <Flowchart :nodes="nodes"/>
       </div>
-    </div>
+    </section>
   </main>
 </template>
 
