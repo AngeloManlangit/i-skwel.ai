@@ -116,7 +116,6 @@ const edges = ref([
             :nodes="props.nodes"
             :edges="edges"
             fit-view-on-init
-            :nodesDraggable="false"
             :paneMovable="false"  >
         </VueFlow>
     </div>

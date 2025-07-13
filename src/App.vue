@@ -99,21 +99,21 @@ const nodes = ref([
   { 
     id: '13',
     type: 'output',
-    position: { x: 205, y: 500 },
+    position: { x: 205, y: 550 },
     data: { label: 'Hot' },
   },
 
   { 
     id: '14',
     type: 'output',
-    position: { x: 400, y: 500 },
+    position: { x: 400, y: 550 },
     data: { label: 'Heat' },
   },
 
   { 
     id: '15',
     type: 'output',
-    position: { x: 595, y: 500 },
+    position: { x: 595, y: 550 },
     data: { label: 'Fire' },
   },
 ]);
@@ -168,9 +168,9 @@ async function generateRoadmap() {
               parts: [{
                 text: `You are a helpful career and education advisor for a user in Cebu City, Philippines. Your task is to populate a flowchart with a personalized roadmap.
                 Based on the provided flowchart structure, generate relevant and specific labels for EACH of the provided node IDs.
-                For the 'PROGRAM' node (id: 1), suggest a specific tech-related degree (e.g., "BS in Information Technology").
+                For the 'PROGRAM' node (id: 1), suggest a specific tech-related degree.
                 For the 'PREREQUISITES' node (id: 2), provide a high-level category (e.g., "Core Competencies").
-                For the 'SCHOOL A' node (id: 3), name a specific, well-known university in Cebu that offers the suggested program (e.g., "University of San Carlos").
+                For the 'SCHOOL A' node (id: 3), name a specific, well-known university in Cebu that offers the suggested program.
                 The other nodes should be filled with related sub-topics, skills, or career steps.
                 Return the response ONLY as a JSON array of objects, where each object has an "id" and a "newLabel", validating against the provided schema.`
               }]
@@ -253,8 +253,6 @@ async function generateRoadmap() {
           <img src="./assets/i-skwelai-anim2.gif" v-if="isLoading" class="z-1 fixed w-120 pt-50">
         </div>
 
-        
-        
         <!-- Error Message Display -->
         <div v-if="error" class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
           <strong>Error:</strong> {{ error }}
