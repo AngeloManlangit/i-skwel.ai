@@ -79,11 +79,12 @@ def generate_roadmap():
         * FOR nodes with id 10-12, provide schools that offer the program that can be found in the database that are related to the program suggested in id: 1.
         * Fill the remaining nodes (13-15) with information regarding the schools found in nodes 10-12 respectively.
           For nodes 13-15, follow this example format when displaying information in each of the nodes:
-            - [Location] (new line)
-            - [Type of School (Private/SUC)]  (new line)
-            - Offered courses with a short description of the school (new line)
-            - Website: [Website Url of the school]
+            - Location: [Location] \n\n
+            - Type of School: [Type of School (Private/SUC)]  \n\n
+            - Website: [Website Url of the school] \n
         
+        * For 'suggestedProgram' (id: suggested-program ), put the same PROGRAM that is stated in id: 1.
+        * For 'whyThisProgram' (id: why-this-program), provide a brief explanation of why this program is relevant to the user's query and context.
         When assigning to Colleges or Schools to the nodes 10-12, schools must not be repeated. So, make use of other schools available from the database that offers the program in id: 1.
         Return the response ONLY as a JSON array of objects, structured exactly as required by the roadmap_schema, with 'id' and 'newLabel' for all nodes (1-15).
         """

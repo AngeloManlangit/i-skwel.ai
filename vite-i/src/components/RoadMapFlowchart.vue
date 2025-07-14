@@ -101,7 +101,7 @@ const edges = ref([
 <template>
   
     <!-- Vue Flow Diagram Container -->
-    <div class="vue-flow-container" :style="{ height: '1000px', width: '80%' }">
+    <div class="vue-flow-container" :style="{ height: '1200px', width: '80%' }">
         <VueFlow
             :nodes="props.nodes"
             :edges="edges"

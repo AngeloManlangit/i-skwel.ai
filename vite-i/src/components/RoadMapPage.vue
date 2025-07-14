@@ -19,7 +19,8 @@ const BACKEND_API_URL = 'http://localhost:5000/generate_roadmap'
 const isLoading = ref(false); // To show a loading state on the button
 const showLoadingOverlay = ref(false); // full-screen loading overlay
 const error = ref(null); // To display any errors from the API call
-
+const suggestedProgram = ref('');
+const whyThisProgram = ref('');
 // VUE NODES - Initial state for the flowchart nodes
 const nodes = ref([
   // main 3 nodes
@@ -168,6 +169,15 @@ async function generateRoadmap() {
         // We do not need to parse JSON from response.text or look for 'candidates[0]'.
         const parsedLabels = await response.json(); 
 
+        const programData = parsedLabels.find(item => item.id === '1');
+        const whyData = parsedLabels.find(item => item.id === 'why-this-program');
+
+        if (programData) {
+        suggestedProgram.value = programData.newLabel;
+        }
+        if (whyData) {
+        whyThisProgram.value = whyData.newLabel;
+      }
         if (!parsedLabels || !Array.isArray(parsedLabels)) {
             throw new Error('Received an empty or invalid JSON array from the backend.');
         }
@@ -218,6 +228,7 @@ const handleNavigateToHome = () => {
 </script>
 
 <template>
+  <div>
   <Navbar @navigateToHome="handleNavigateToHome"/>
   <div class="min-h-screen" style="background-color: #14161a;">
     <div
@@ -227,7 +238,7 @@ const handleNavigateToHome = () => {
 
       <div class="max-w-4xl mx-auto">
         <h2 class="text-4xl md:text-5xl font-bold mb-6 text-yellow-500 [text-shadow:0_0_10px_#FFD700] pt-6">Your Personalized Roadmap</h2>
-        <p class="text-lg md:text-xl mb-12" style="color: #d2c179">
+        <p class="text-lg md:text-xl npm-12" style="color: #d2c179">
           Here's the AI-generated learning and career path tailored just for you. Located in Cebu City, Central Visayas, Philippines, we provide insights relevant to your region.
           <span v-if="props.userInput.prompt">
             Based on your request: "{{ props.userInput.prompt }}"
@@ -275,16 +286,17 @@ const handleNavigateToHome = () => {
         <div class="flex items-center space-x-2 mb-2"> <div class="w-3 h-3 rounded-full" style="background-color: #FFD700;"></div>
         <span style="color: #D2C179;">Suggested Program:</span>
         </div>
-        <p class="ml-5" style="color: #FFF3C2;">hgsdfds</p> </li>
+        <p class="ml-5" id ="suggested-program" style="color: #FFF3C2;">{{ suggestedProgram }}</p> </li>
         <li>
         <div class="flex items-center space-x-2 mb-2"> <div class="w-3 h-3 rounded-full" style="background-color: #FFD700;"></div>
-        <span style="color: #D2C179;">Suggested Program:</span>
+        <span style="color: #D2C179;">Why this program:</span>
         </div>
-        <p class="ml-5" style="color: #FFF3C2;">hgsdfds</p> </li>
+        <p class="ml-5" style="color: #FFF3C2;">{{ whyThisProgram }}</p> </li>
       
     </ul>
-</div>
+  </div>
           </div>
+  </div>
   </div>
 </template>
 
