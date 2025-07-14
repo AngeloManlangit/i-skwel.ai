@@ -112,7 +112,6 @@
   <script setup>
   import { ref, onMounted, watch, nextTick } from 'vue';
   import { useRoute, useRouter } from 'vue-router'; 
-  
   import Navbar from './Navbar.vue';
   
   const route = useRoute();
@@ -168,15 +167,7 @@
   const roadmapBox = ref(null);
   const isHighlighted = ref(false);
   
-  
-  async function generateRoadmapData(data) {
-    console.log("Simulating API call to generate roadmap with data:", data);
-  
-  
-  
-  }
-  
-  
+    
   const initiateRoadmapGeneration = () => {
     showRoadmapLoading.value = true;
   
@@ -188,9 +179,6 @@
           location: userInput.value.location,
           startingPoint: userInput.value.startingPoint
         };
-  
-        // Call the local API generation function
-        const generatedRoadmapData = await generateRoadmapData(dataToGenerate);
   
         showRoadmapLoading.value = false;
   
