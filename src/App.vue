@@ -2,9 +2,17 @@
 import { ref } from 'vue';
 import Flowchart from './components/Flowchart.vue';
 
+// API URL
+const BACKEND_API_URL = 'http://localhost:5000/generate_roadmap'
+
 // --- STATE MANAGEMENT ---
 const isLoading = ref(false); // To show a loading state on the button
 const error = ref(null); // To display any errors from the API call
+
+// Variables to store results from backend
+const schoolsList = ref([])
+const resourcesList = ref([])
+const scholarshipsList = ref([])
 
 // VUE NODES
 const nodes = ref([
@@ -23,13 +31,13 @@ const nodes = ref([
   { 
     id: '2',
     position: { x: 400, y: 190 },
-    data: { label: 'PREREQUISITES' },
+    data: { label: 'RESOURCES' },
   },
 
   { 
     id: '3',
     position: { x: 400, y: 340 },
-    data: { label: 'SCHOOL A' },
+    data: { label: 'COLLEGES' },
   },
 
   // sub-nodes of Prequisites (id: 2)
@@ -37,42 +45,42 @@ const nodes = ref([
     id: '4',
     type: 'output',
     position: { x: 200, y: 120 },
-    data: { label: 'HI' },
+    data: { label: 'RESOURCE1' },
   },
 
   { 
     id: '5',
     type: 'output',
     position: { x: 200, y: 200 },
-    data: { label: 'HELLO' },
+    data: { label: 'RESOURCE2' },
   },
 
   { 
     id: '6',
     type: 'output',
     position: { x: 200, y: 280 },
-    data: { label: 'HEYO' },
+    data: { label: 'RESOURCE3' },
   },
 
   { 
     id: '7',
     type: 'output',
     position: { x: 600, y: 120 },
-    data: { label: 'BYE' },
+    data: { label: 'RESOURCE4' },
   },
 
   { 
     id: '8',
     type: 'output',
     position: { x: 600, y: 200 },
-    data: { label: 'GOODBYE' },
+    data: { label: 'RESOURCE5' },
   },
 
   { 
     id: '9',
     type: 'output',
     position: { x: 600, y: 280 },
-    data: { label: 'SEE YA!' },
+    data: { label: 'RESOURCE6' },
   },
 
   // school sub-nodes (id: 3)
@@ -80,19 +88,19 @@ const nodes = ref([
   {
     id: '10',
     position: { x: 205, y: 420 },
-    data: { label: 'Chill' },
+    data: { label: 'SCHOOL1' },
   },
 
   {
     id: '11',
     position: { x: 400, y: 420 },
-    data: { label: 'Cool' },
+    data: { label: 'SCHOOL2' },
   },
 
   {
     id: '12',
     position: { x: 595, y: 420 },
-    data: { label: 'Ice' },
+    data: { label: 'SCHOOL3' },
   },
 
   // description of school sub-nodes (10 -> 13, 11 -> 14, 12 -> 15)
@@ -100,21 +108,21 @@ const nodes = ref([
     id: '13',
     type: 'output',
     position: { x: 205, y: 550 },
-    data: { label: 'Hot' },
+    data: { label: 'SCHOOL1_INFO' },
   },
 
   { 
     id: '14',
     type: 'output',
     position: { x: 400, y: 550 },
-    data: { label: 'Heat' },
+    data: { label: 'SCHOOL2_INFO' },
   },
 
   { 
     id: '15',
     type: 'output',
     position: { x: 595, y: 550 },
-    data: { label: 'Fire' },
+    data: { label: 'SCHOOL3_INFO' },
   },
 ]);
 
@@ -129,60 +137,21 @@ async function generateRoadmap() {
     isLoading.value = true;
     error.value = null;
 
-    if (!apiKey) {
-        error.value = 'VITE_GEMINI_API_KEY is not defined in your .env file.';
-        isLoading.value = false;
-        return; // Exit early if no API key is found
-    }
-
     try {
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-
-        // Provide the model with the current node structure as context.
-        const contextPrompt = `
-          Here is the current structure of a flowchart with placeholder labels.
-          The flowchart represents a personalized learning and career roadmap for a user in Cebu City, Philippines.
-          The main nodes are 'PROGRAM', 'PREREQUISITES', and 'SCHOOL A'.
-          The other nodes are sub-topics or details related to these main nodes.
-          Current labels: ${JSON.stringify(nodes.value.map(n => ({id: n.id, label: n.data.label})))}
-        `;
-
-        // Define the JSON schema for the expected response.
-        const schema = {
-          type: 'ARRAY',
-          items: {
-            type: 'OBJECT',
-            properties: {
-              id: { type: 'STRING' },
-              newLabel: { type: 'STRING' },
-            },
-            required: ['id', 'newLabel'],
-          },
-        };
-
+        // Prepare the data to send to the backend
+        // We send the current node structure and the user query/context.
         const requestBody = {
-            contents: [{
-                parts: [{ text: contextPrompt }]
-            }],
-            systemInstruction: {
-              parts: [{
-                text: `You are a helpful career and education advisor for a user in Cebu City, Philippines. Your task is to populate a flowchart with a personalized roadmap.
-                Based on the provided flowchart structure, generate relevant and specific labels for EACH of the provided node IDs.
-                For the 'PROGRAM' node (id: 1), suggest a specific tech-related degree.
-                For the 'PREREQUISITES' node (id: 2), provide a high-level category (e.g., "Core Competencies").
-                For the 'SCHOOL A' node (id: 3), name a specific, well-known university in Cebu that offers the suggested program.
-                The other nodes should be filled with related sub-topics, skills, or career steps.
-                Return the response ONLY as a JSON array of objects, where each object has an "id" and a "newLabel", validating against the provided schema.`
-              }]
-            },
-            generationConfig: {
-              responseMimeType: 'application/json',
-              responseSchema: schema,
-              temperature: 0.8,
-            }
+            // We pass the current nodes array structure and labels for context
+            currentNodes: nodes.value.map(n => ({ id: n.id, label: n.data.label })),
+            
+            // If you have a user input field, pass its value:
+            // userQuery: userQueryInput.value,
+            
+            // If not, use a default query for RAG (similar to how backend_api.py handles it):
+            userQuery: "I like to do Science and I am not very good at math. I prefer to learn more about the human body but I do not want to be in any medical field.", 
         };
 
-        const response = await fetch(API_URL, {
+        const response = await fetch(BACKEND_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
@@ -190,17 +159,16 @@ async function generateRoadmap() {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error?.message || 'Failed to fetch data from Gemini API.');
+            throw new Error(errorData.error?.message || 'Failed to fetch data from backend API.');
         }
 
-        const data = await response.json();
-        const newLabelsText = data.candidates[0]?.content?.parts[0]?.text;
+        // The backend now returns the structured JSON array directly.
+        // We do not need to parse JSON from response.text or look for 'candidates[0]'.
+        const parsedLabels = await response.json(); 
 
-        if (!newLabelsText) {
-            throw new Error('Received an empty or invalid JSON response from the API.');
+        if (!parsedLabels || !Array.isArray(parsedLabels)) {
+            throw new Error('Received an empty or invalid JSON array from the backend.');
         }
-
-        const parsedLabels = JSON.parse(newLabelsText);
 
         // Create a map for easy lookup
         const labelMap = new Map(parsedLabels.map(item => [item.id, item.newLabel]));
@@ -220,8 +188,8 @@ async function generateRoadmap() {
         });
 
     } catch (e) {
-        console.error(e);
-        error.value = e.message;
+        console.error("Error generating roadmap:", e);
+        error.value = e.message || 'An unknown error occurred.';
     } finally {
         isLoading.value = false;
     }
