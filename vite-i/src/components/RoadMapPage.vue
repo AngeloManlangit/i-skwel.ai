@@ -12,6 +12,9 @@ const props = defineProps({
   }
 });
 
+// API URL
+const BACKEND_API_URL = 'http://localhost:5000/generate_roadmap'
+
 // --- STATE MANAGEMENT ---
 const isLoading = ref(false); // To show a loading state on the button
 const showLoadingOverlay = ref(false); // full-screen loading overlay
@@ -30,13 +33,13 @@ const nodes = ref([
   {
     id: '2',
     position: { x: 400, y: 190 },
-    data: { label: 'PREREQUISITES' },
+    data: { label: 'RESOURCES' },
     class: 'primary',
   },
   {
     id: '3',
     position: { x: 400, y: 340 },
-    data: { label: 'SCHOOL A' },
+    data: { label: 'COLLEGES' },
     class: 'primary', 
   },
   // sub-nodes of Prequisites (id: 2)
@@ -44,61 +47,61 @@ const nodes = ref([
     id: '4',
     type: 'output',
     position: { x: 200, y: 120 },
-    data: { label: 'HI' },
+    data: { label: 'RESOURCE1' },
     class: 'second'
   },
   {
     id: '5',
     type: 'output',
     position: { x: 200, y: 200 },
-    data: { label: 'HELLO' },
+    data: { label: 'RESOURCE2' },
     class: 'second'
   },
   {
     id: '6',
     type: 'output',
     position: { x: 200, y: 280 },
-    data: { label: 'HEYO' },
+    data: { label: 'RESOURCE3' },
     class: 'second'
   },
   {
     id: '7',
     type: 'output',
     position: { x: 600, y: 120 },
-    data: { label: 'BYE' },
+    data: { label: 'RESOURCE4' },
     class: 'second'
   },
   {
     id: '8',
     type: 'output',
     position: { x: 600, y: 200 },
-    data: { label: 'GOODBYE' },
+    data: { label: 'RESOURCE5' },
     class: 'second'
   },
   {
     id: '9',
     type: 'output',
     position: { x: 600, y: 280 },
-    data: { label: 'SEE YA!' },
+    data: { label: 'RESOURCE6' },
     class: 'second'
   },
   // school sub-nodes (id: 3)
   {
     id: '10',
     position: { x: 205, y: 420 },
-    data: { label: 'Chill' },
+    data: { label: 'SCHOOL1' },
     class: 'second'
   },
   {
     id: '11',
     position: { x: 400, y: 420 },
-    data: { label: 'Cool' },
+    data: { label: 'SCHOOL2' },
     class: 'second'
   },
   {
     id: '12',
     position: { x: 595, y: 420 },
-    data: { label: 'Ice' },
+    data: { label: 'SCHOOL3' },
     class: 'second'
   },
   // description of school sub-nodes (10 -> 13, 11 -> 14, 12 -> 15)
@@ -106,90 +109,51 @@ const nodes = ref([
     id: '13',
     type: 'output',
     position: { x: 205, y: 500 },
-    data: { label: 'Hot' },
+    data: { label: 'SCHOOL1_INFO' },
     class: 'second'
   },
   {
     id: '14',
     type: 'output',
     position: { x: 400, y: 500 },
-    data: { label: 'Heat' },
+    data: { label: 'SCHOOL2_INFO' },
     class: 'second'
   },
   {
     id: '15',
     type: 'output',
     position: { x: 595, y: 500 },
-    data: { label: 'Fire' },
+    data: { label: 'SCHOOL3_INFO' },
     class: 'second'
   },
 ]);
 
 // --- SECURE API KEY HANDLING ---
-// The Canvas environment automatically provides the API key, so leave it as an empty string.
-const apiKey = "";
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 // --- GEMINI API INTEGRATION ---
 /**
  * Main function to trigger the API call and update the node labels.
- * @param {string} userPrompt - The specific prompt from the user for roadmap generation.
  */
-async function generateRoadmap(userPrompt = '') {
+async function generateRoadmap() {
     isLoading.value = true;
-    showLoadingOverlay.value = true; // Show the overlay
     error.value = null;
 
     try {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-        // Combine the fixed context with the user's specific prompt
-        const fullPrompt = `
-          Here is the current structure of a flowchart with placeholder labels.
-          The flowchart represents a personalized learning and career roadmap for a user in Cebu City, Philippines.
-          The main nodes are 'PROGRAM', 'PREREQUISITES', and 'SCHOOL A'.
-          The other nodes should be sub-topics or details related to these main nodes.
-          Current labels: ${JSON.stringify(nodes.value.map(n => ({id: n.id, label: n.data.label})))}
-
-          User's specific request: ${userPrompt}
-
-          Based on the provided flowchart structure and the user's request, generate relevant and specific labels for EACH of the provided node IDs.
-          For the 'PROGRAM' node (id: 1), suggest a specific tech-related degree (e.g., "BS in Information Technology").
-          For the 'PREREQUISITES' node (id: 2), provide a high-level category (e.g., "Core Competencies").
-          For the 'SCHOOL A' node (id: 3), name a specific, well-known university in Cebu that offers the suggested program (e.g., "University of San Carlos").
-          The other nodes should be filled with related sub-topics, skills, or career steps.
-          Return the response ONLY as a JSON array of objects, where each object has an "id" and a "newLabel", validating against the provided schema.
-        `;
-
-        // Define the JSON schema for the expected response.
-        const schema = {
-          type: 'ARRAY',
-          items: {
-            type: 'OBJECT',
-            properties: {
-              id: { type: 'STRING' },
-              newLabel: { type: 'STRING' },
-            },
-            required: ['id', 'newLabel'],
-          },
-        };
-
+        // Prepare the data to send to the backend
+        // We send the current node structure and the user query/context.
         const requestBody = {
-            contents: [{
-                parts: [{ text: fullPrompt }]
-            }],
-            systemInstruction: {
-              parts: [{
-                text: `You are a helpful career and education advisor for a user in Cebu City, Philippines. Your task is to populate a flowchart with a personalized roadmap.`
-              }]
-            },
-            generationConfig: {
-              responseMimeType: 'application/json',
-              responseSchema: schema,
-              temperature: 0.8,
-            }
+            // We pass the current nodes array structure and labels for context
+            currentNodes: nodes.value.map(n => ({ id: n.id, label: n.data.label })),
+            
+            // If you have a user input field, pass its value:
+            // userQuery: userQueryInput.value,
+            
+            // If not, use a default query for RAG (similar to how backend_api.py handles it):
+            userQuery: "I enjoy cooking. I want to pursue the art of cooking, and becomme a chef. Help me in my journey.", 
         };
 
-        const response = await fetch(apiUrl, {
+        const response = await fetch(BACKEND_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
@@ -197,21 +161,16 @@ async function generateRoadmap(userPrompt = '') {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error?.message || 'Failed to fetch data from Gemini API.');
+            throw new Error(errorData.error?.message || 'Failed to fetch data from backend API.');
         }
 
-        const data = await response.json();
-        const newLabelsText = data.candidates && data.candidates.length > 0 &&
-                             data.candidates[0].content && data.candidates[0].content.parts &&
-                             data.candidates[0].content.parts.length > 0 ?
-                             data.candidates[0].content.parts[0].text : null;
+        // The backend now returns the structured JSON array directly.
+        // We do not need to parse JSON from response.text or look for 'candidates[0]'.
+        const parsedLabels = await response.json(); 
 
-
-        if (!newLabelsText) {
-            throw new Error('Received an empty or invalid JSON response from the API.');
+        if (!parsedLabels || !Array.isArray(parsedLabels)) {
+            throw new Error('Received an empty or invalid JSON array from the backend.');
         }
-
-        const parsedLabels = JSON.parse(newLabelsText);
 
         // Create a map for easy lookup
         const labelMap = new Map(parsedLabels.map(item => [item.id, item.newLabel]));
@@ -232,13 +191,11 @@ async function generateRoadmap(userPrompt = '') {
 
     } catch (e) {
         console.error("Error generating roadmap:", e);
-        error.value = e.message;
+        error.value = e.message || 'An unknown error occurred.';
     } finally {
         isLoading.value = false;
-        showLoadingOverlay.value = false; // Hide the overlay regardless of success or failure
     }
 }
-
 // Automatically generate roadmap when the component mounts or userInput changes
 onMounted(() => {
   if (props.userInput && props.userInput.prompt) {
