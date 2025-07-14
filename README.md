@@ -68,6 +68,7 @@ Follow the installation processes of [Vue Flow](https://vueflow.dev/guide/gettin
 ```
 VITE_GEMINI_API_KEY=(your Gemini 2.5 API Key)
 ```
+*Place your .env file in the same folder as App.vue*
 
 #### Compile and Hot-Reload for Development
 
