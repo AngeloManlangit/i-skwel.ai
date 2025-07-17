@@ -75,14 +75,14 @@ VITE_GEMINI_API_KEY=(your Gemini 2.5 API Key)
 
 #### Install the following Python libraries
 ```
-pip install pandas chromadb google-genai python-dotenv Flask Flask-Cors
+pip install pandas chromadb google-genai python-dotenv Flask Flask-Cors openpyxl
 ```
 ### Initialize vector database (skip if it has been initialized already)
 ```
 python fill_db_new.py
 ```
 
-#### Run pyhthon flask-backend server
+#### Run python flask-backend server
 ```
 python run backend_api.py
 ```
