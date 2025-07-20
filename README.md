@@ -99,3 +99,11 @@ or Compile and Minify for Production using:
 ```sh
 npm run build
 ```
+
+## Development Team
+Made possible by these developers: 
+- Buno, Russel - Frontend Developer
+- Castaños, Loriz Marie - Frontend Developer
+- Manlangit, Angelo Mari - Frontend Developer
+- Retutal, Ryan Anthony - Backend Developer
+- Santillan, Carl Benedict - Backend Developer
