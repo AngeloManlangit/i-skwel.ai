@@ -85,7 +85,7 @@ python fill_db_new.py
 
 #### Run python flask-backend server (run this in the backend folder)
 ```
-python run backend_api.py
+python backend_api.py
 ```
 
 #### Compile and Hot-Reload for Development
