@@ -69,7 +69,8 @@ Follow the installation processes of [Vue Flow](https://vueflow.dev/guide/gettin
 #### Setup your .env file
 ./I-skwel.ai/.env:
 ```
-VITE_GEMINI_API_KEY=(your Gemini 2.5 API Key)
+VITE_GEMINI_API_KEY=YOUR GEMINI API KEY
+GOOGLE_API_KEY=YOUR GEMINI API KEY
 ```
 *Place your .env file in the same folder as App.vue*
 
@@ -82,7 +83,7 @@ pip install pandas chromadb google-genai python-dotenv Flask Flask-Cors openpyxl
 python fill_db_new.py
 ```
 
-#### Run python flask-backend server
+#### Run python flask-backend server (run this in the backend folder)
 ```
 python run backend_api.py
 ```
