@@ -1,30 +1,27 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router'; // Import useRoute
+import { useRoute } from 'vue-router'; 
 import RoadMapFlowchart from './RoadMapFlowchart.vue';
 import Navbar from './Navbar.vue';
 
-const route = useRoute(); // Initialize useRoute
+const route = useRoute(); 
 
-// Define props (if any other props are needed, keep them here)
-// Removed the userInput prop definition as we'll read directly from route.query
-const props = defineProps({
-  // If you have other props that are NOT from router query, define them here.
-  // For now, assuming userInput was the only one.
-});
 
-// API URL
+//python api url
 const BACKEND_API_URL = 'http://localhost:5000/generate_roadmap'
 
-// --- STATE MANAGEMENT ---
-const isLoading = ref(false); // To show a loading state on the button
-const showLoadingOverlay = ref(false); // full-screen loading overlay
-const error = ref(null); // To display any errors from the API call
+// show loading
+const isLoading = ref(false); 
+//full-screen loading overlay
+const showLoadingOverlay = ref(false);
+//to display errors in calling api
+const error = ref(null); 
+
 const suggestedProgram = ref('');
 const whyThisProgram = ref('');
-// VUE NODES - Initial state for the flowchart nodes
+//flowchart nodes
+
 const nodes = ref([
-  // main 3 nodes
   {
     id: '1',
     type: 'input',
@@ -55,7 +52,7 @@ const nodes = ref([
   {
     id: '5',
     type: 'output',
-    position: { x: 200, y: 200 },
+    position: { x: 30, y: 200 },
     data: { label: 'RESOURCE2' },
     class: 'second'
   },
@@ -76,7 +73,7 @@ const nodes = ref([
   {
     id: '8',
     type: 'output',
-    position: { x: 600, y: 200 },
+    position: { x: 780, y: 200 },
     data: { label: 'RESOURCE5' },
     class: 'second'
   },
@@ -112,59 +109,45 @@ const nodes = ref([
     type: 'output',
     position: { x: 205, y: 500 },
     data: { label: 'SCHOOL1_INFO' },
-    class: 'second'
+    class: 'third'
   },
   {
     id: '14',
     type: 'output',
     position: { x: 400, y: 500 },
     data: { label: 'SCHOOL2_INFO' },
-    class: 'second'
+    class: 'third'
   },
   {
     id: '15',
     type: 'output',
     position: { x: 595, y: 500 },
     data: { label: 'SCHOOL3_INFO' },
-    class: 'second'
+    class: 'third'
   },
 ]);
 
-// --- SECURE API KEY HANDLING ---
+//api key
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-// --- GEMINI API INTEGRATION ---
-/**
- * Main function to trigger the API call and update the node labels.
- * @param {string} [userPrompt=null] - Optional user prompt to use for the API call.
- * If not provided, it falls back to route.query.prompt
- * or a default hardcoded query.
- */
+
 async function generateRoadmap(userPrompt = null) {
   isLoading.value = true;
   error.value = null;
-  showLoadingOverlay.value = true; // Ensure overlay is shown
+  showLoadingOverlay.value = true; 
 
   try {
-    // --- DEBUGGING LOGS ---
-    console.log("generateRoadmap called.");
-    console.log("userPrompt argument:", userPrompt);
-    console.log("route.query:", route.query); // Log route.query directly
-    console.log("route.query.prompt:", route.query.prompt); // Log route.query.prompt
-    // --- END DEBUGGING LOGS ---
 
-    // Determine the actual user query to send to the backend
-    // Now correctly using route.query.prompt
+
+    //prompt
     const actualUserQuery = userPrompt || route.query.prompt || "I enjoy cooking. I want to pursue the art of cooking, and becomme a chef. Help me in my journey.";
-    console.log("actualUserQuery determined:", actualUserQuery); // Add this too
+    console.log("actualUserQuery determined:", actualUserQuery); 
 
-    // Prepare the data to send to the backend
-    // We send the current node structure and the user query/context.
+    // send the data to backend    
     const requestBody = {
-      // We pass the current nodes array structure and labels for context
+      // We pass the current nodes to the backend
       currentNodes: nodes.value.map(n => ({ id: n.id, label: n.data.label })),
-      userQuery: actualUserQuery, // Use the determined user query
-      // You might also want to send location and startingPoint if your backend uses them:
+      userQuery: actualUserQuery, 
       location: route.query.location,
       startingPoint: route.query.startingPoint
     };
@@ -180,8 +163,7 @@ async function generateRoadmap(userPrompt = null) {
       throw new Error(errorData.error?.message || 'Failed to fetch data from backend API.');
     }
 
-    // The backend now returns the structured JSON array directly.
-    // We do not need to parse JSON from response.text or look for 'candidates[0]'.
+    // backend response
     const parsedLabels = await response.json(); 
 
     const programData = parsedLabels.find(item => item.id === '1');
@@ -197,10 +179,10 @@ async function generateRoadmap(userPrompt = null) {
       throw new Error('Received an empty or invalid JSON array from the backend.');
     }
 
-    // Create a map for easy lookup
+    //map for the parsed labels
     const labelMap = new Map(parsedLabels.map(item => [item.id, item.newLabel]));
 
-    // Update the nodes with the new labels from the map
+    // Update the nodes 
     nodes.value = nodes.value.map(node => {
       if (labelMap.has(node.id)) {
         return {
@@ -219,16 +201,15 @@ async function generateRoadmap(userPrompt = null) {
     error.value = e.message || 'An unknown error occurred.';
   } finally {
     isLoading.value = false;
-    showLoadingOverlay.value = false; // Hide overlay when generation finishes
+    showLoadingOverlay.value = false; 
   }
 }
-// Automatically generate roadmap when the component mounts or route.query.prompt changes
+// Automatically generate roadmap when the component 
 onMounted(() => {
-  // Use route.query.prompt directly
   if (route.query.prompt) {
     generateRoadmap(route.query.prompt);
   } else {
-    // If no prompt from query, generate with default or initial state
+    // If no prompt return default query
     generateRoadmap(); 
   }
 });
@@ -239,13 +220,8 @@ watch(() => route.query.prompt, (newPrompt, oldPrompt) => {
   }
 });
 
-const handleNavigateToHome = () => {
-    // Implement navigation logic if needed
-    console.log("Navigating to home from Roadmap page (placeholder)");
-};
-
 defineExpose({
-  generateRoadmap // Still expose if you intend to call it from parent components (e.g., for "Regenerate Roadmap" button)
+  generateRoadmap 
 });
 </script>
 
@@ -255,16 +231,13 @@ defineExpose({
   <div class="min-h-screen" style="background-color: #14161a;">
     <div
       :class="{ 'blur-sm': showLoadingOverlay, 'pointer-events-none': showLoadingOverlay }"
-      class="flex-grow flex flex-col items-center p-6 pt-5 text-center transition-all duration-300 ease-out"
+      class="flex-grow flex flex-col items-center p-6 pt-10 text-center transition-all duration-300 ease-out"
     >
 
       <div class="max-w-4xl mx-auto">
         <h2 class="text-4xl md:text-5xl font-bold mb-6 text-yellow-500 [text-shadow:0_0_10px_#FFD700] pt-6">Your Personalized Roadmap</h2>
         <p class="text-lg md:text-xl npm-12" style="color: #d2c179">
           Here's the AI-generated learning and career path tailored just for you. Located in Cebu City, Central Visayas, Philippines, we provide insights relevant to your region.
-          <span v-if="route.query.prompt">
-            Based on your request: "{{ route.query.prompt }}"
-          </span>
         </p>
       </div>
 
@@ -317,7 +290,7 @@ defineExpose({
       
     </ul>
   </div>
-          </div>
+  </div>
   </div>
   </div>
 </template>
