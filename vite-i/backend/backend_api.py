@@ -79,9 +79,9 @@ def generate_roadmap():
         * FOR nodes with id 10-12, provide top schools that offer the program that can be found in the database that are related to the program suggested in id: 1.
         * Fill the remaining nodes (13-15) with information regarding the schools found in nodes 10-12 respectively.
           For nodes 13-15, follow this example format when displaying information in each of the nodes:
-            - Location: [Location] \n\n
-            - Type of School: [Type of School (Private/SUC)]  \n\n
-            - Website: [Website Url of the school] \n
+            - Location: [Location ] 
+             Type of School: [Type of School (Private/SUC) ]  
+             Website: [Website Url of the school ] 
         
         * For 'suggestedProgram' (id: suggested-program ), put the same PROGRAM that is stated in id: 1.
         * For 'whyThisProgram' (id: why-this-program), Craft a brief, encouraging explanation. Acknowledge the user's stated interest, explain how the program is a great match, and briefly mention its career potential.

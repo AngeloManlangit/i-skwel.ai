@@ -1,7 +1,7 @@
 import pandas as pd
 import chromadb
 
-EXCEL_FILE_PATH = r"data/univ_real.xlsx"
+EXCEL_FILE_PATH = r"data/univ_legit.xlsx"
 CHROMA_PATH = r"chroma_db" # Path where ChromaDB will store its data
 
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
@@ -100,9 +100,9 @@ for index, row in actually_really_final_combined_data.iterrows():
     resource_name = row['RESOURCE_NAME']
     resource_link = row['LINK']
     resource_types = row['TYPE']
-    ched_scholar_link = row['CHED_SCHOLARSHIP_LINK']
-    owwa_scholar_link = row['OWWA_SCHOLARSHIP_LINK']
-    dost_scholar_link = row['DOST_SCHOLARSHIP_LINK']
+    dost_eligibility = row['DOST_ELIGIBLE']
+
+    
 
     document_content = (
         f"The {institution_name} ({institution_type} college) "
@@ -115,7 +115,7 @@ for index, row in actually_really_final_combined_data.iterrows():
     # Store useful metadata for potential filtering or more detailed retrieval
     metadatas_to_add.append({
         "school_id": row['SCHOOL_ID'],
-        "program_id": row['PROGRAM_ID'],
+        "program_id": row['PROGRAM_ID_x'],
         "institution_name": institution_name,
         "institution_type": institution_type,
         "province": province,
@@ -124,9 +124,7 @@ for index, row in actually_really_final_combined_data.iterrows():
         "resource_name": resource_name,
         "resource_link": resource_link,
         "resource_types": resource_types,
-        "ched_scholarship_link": ched_scholar_link,
-        "owwa_scholarship_link": owwa_scholar_link,
-        "dost_scholarship_link": dost_scholar_link
+        "dost_eligibility": dost_eligibility,
     })
     
     ids_to_add.append(f"school_program_offering_{record_counter}")
